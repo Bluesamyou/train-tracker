@@ -16,6 +16,25 @@ $('document').ready(function(){
 
     var db = firebase.database();
 
+    
+
+    var calculateTimes = function(){
+        $('tbody tr').each(function(index, value){
+            var frequency = $(value).children('td#frequency').text()
+            var startTime = $(value).children('td#time').text()
+
+            var convertedTime = moment(startTime, "HH:mm").subtract(1, "years");
+
+            var timeDiff = moment().diff(moment(convertedTime), 'minutes');
+
+            var nextTrainMins = (frequency - (timeDiff % frequency));
+
+            var nextTrainTime = moment().add(nextTrainMins, "minutes").format("HH:mm");
+
+            $(value).children('td#next-arrival').text(nextTrainTime); 
+            $(value).children('td#mins-away').text(nextTrainMins);             
+        });
+    }
     $('.submit-button').on('click', function(event){
         event.preventDefault();
 
@@ -41,15 +60,29 @@ $('document').ready(function(){
     db.ref('/train-tracker').on('value', function(snap){
         Object.keys(snap.val()).forEach(function(dbId){
             
-            var id = $('<td>').text(dbId).attr({'style'  : "display: none"});
-            var name = $('<td>').text(snap.val()[dbId].name);
-            var destination = $('<td>').text(snap.val()[dbId].destination);
-            var frequency = $('<td>').text(snap.val()[dbId].frequency);
+            var id = $('<td>').text(dbId).attr({'style'  : "display: none", id : "id"});
+            var name = $('<td>').text(snap.val()[dbId].name).attr({id:'name'});
+            var destination = $('<td>').text(snap.val()[dbId].destination).attr({id:'destination'});
+            var time = $('<td>').text(snap.val()[dbId].time).attr({'style'  : "display: none", id : "time"});
+            var frequency = $('<td>').text(snap.val()[dbId].frequency).attr({id:'frequency'});
+            var nextArrival = $('<td>').text('').attr({id:'next-arrival'});
+            var minsAway = $('<td>').text('').attr({id:'mins-away'});
 
-            var appendRow = $('<tr>').append([id, name, destination,frequency]); 
+
+            var appendRow = $('<tr>').append([id, name, destination,time,frequency, nextArrival, minsAway]); 
 
             $('tbody').append(appendRow)
-
+             
+            calculateTimes();
         })
     })
+
+    
+var timer = function(){
+    calculateTimes()
+    setTimeout(timer, '60000')
+}
+
+timer()
+
 })
